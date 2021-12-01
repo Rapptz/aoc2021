@@ -15,13 +15,18 @@ def download(day: int) -> bytes:
 
 source_template = """use anyhow::Result;
 
-fn solution(input: &str) -> Result<()> {{
+fn part1(input: &str) -> Result<()> {{
+    Ok(())
+}}
+
+fn part2(input: &str) -> Result<()> {{
     Ok(())
 }}
 
 fn main() -> Result<()> {{
     let input = include_str!("{filename}");
-    solution(input)?;
+    println!("{{:?}}", part1(input)?);
+    // println!("{{:?}}", part2(input)?);
     Ok(())
 }}
 """
