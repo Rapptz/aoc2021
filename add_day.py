@@ -24,7 +24,7 @@ fn part2(input: &str) -> Result<()> {{
 }}
 
 fn main() -> Result<()> {{
-    let input = include_str!("{filename}");
+    let input = include_str!("{filename}").trim_end();
     println!("{{:?}}", part1(input)?);
     // println!("{{:?}}", part2(input)?);
     Ok(())
