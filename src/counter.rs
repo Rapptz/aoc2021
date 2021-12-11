@@ -128,6 +128,17 @@ impl<K> Counter<K> {
         values
     }
 
+    /// Returns the top common element in the counter
+    pub fn top(&self) -> Option<(K, i64)>
+    where
+        K: Clone,
+    {
+        self.data
+            .iter()
+            .max_by_key(|&(_, v)| *v)
+            .map(|(k, v)| (k.clone(), *v))
+    }
+
     /// Returns the N most common elements in the counter.
     ///
     /// These values are sorted in descending order.
@@ -407,6 +418,7 @@ mod tests {
         assert_eq!(counter[&'e'], -5);
         assert_eq!(counter[&'f'], 4);
         assert_eq!(counter.remove(&'f'), Some(4));
+        assert_eq!(counter.top(), Some(('a', 4)));
 
         counter.clear();
         assert!(counter.is_empty());
