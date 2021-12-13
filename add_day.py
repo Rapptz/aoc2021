@@ -24,21 +24,21 @@ fn part2(input: &str) -> Result<usize> {{
 }}
 
 #[cfg(test)]
-mod tests {
+mod tests {{
     use super::*;
 
     const INPUT: &'static str = "";
 
     #[test]
-    fn test_part1() {
+    fn test_part1() {{
         assert_eq!(part1(INPUT).unwrap(), 0);
-    }
+    }}
 
     #[test]
-    fn test_part2() {
+    fn test_part2() {{
         assert_eq!(part2(INPUT).unwrap(), 0);
-    }
-}
+    }}
+}}
 
 fn main() -> Result<()> {{
     let input = include_str!("{filename}").trim_end();
