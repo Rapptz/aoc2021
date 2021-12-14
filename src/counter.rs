@@ -139,6 +139,17 @@ impl<K> Counter<K> {
             .map(|(k, v)| (k.clone(), *v))
     }
 
+    /// Returns the bottom common element in the counter
+    pub fn bottom(&self) -> Option<(K, i64)>
+    where
+        K: Clone,
+    {
+        self.data
+            .iter()
+            .min_by_key(|&(_, v)| *v)
+            .map(|(k, v)| (k.clone(), *v))
+    }
+
     /// Returns the N most common elements in the counter.
     ///
     /// These values are sorted in descending order.
