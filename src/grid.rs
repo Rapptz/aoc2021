@@ -1,4 +1,8 @@
-use std::fmt::Debug;
+use std::{
+    fmt::{Debug, Display, Write},
+    hash::Hash,
+    ops::Index,
+};
 
 /// Boilerplate for grid-related problems
 pub struct Grid<V> {
@@ -22,7 +26,38 @@ const ADJACENT: [(isize, isize); 8] = [
     (1, 1),
 ];
 
+/// The direction to go towards.
+///
+/// Used in a few functions, mainly with traversal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Direction {
+    /// The cardinal directions (North, South, East, West)
+    Cardinal,
+    /// The diagonal directions (North West, North East, South West, South East)
+    Diagonal,
+    /// All adjacent directions (NW, N, NE, W, E, SW, S, SE)
+    Adjacent,
+}
+
+impl Direction {
+    fn as_iter(self) -> std::slice::Iter<'static, (isize, isize)> {
+        match self {
+            Direction::Cardinal => CARDINAL.iter(),
+            Direction::Diagonal => DIAGONAL.iter(),
+            Direction::Adjacent => ADJACENT.iter(),
+        }
+    }
+}
+
 impl<V> Grid<V> {
+    pub fn with_data(data: Vec<V>, width: usize, height: usize) -> Self {
+        Self {
+            data,
+            width,
+            height,
+        }
+    }
+
     #[inline]
     const fn index(&self, x: usize, y: usize) -> usize {
         (y * self.width as usize) + x
@@ -55,33 +90,13 @@ impl<V> Grid<V> {
         self.height
     }
 
-    pub fn cardinals(&self, x: usize, y: usize) -> Directional {
+    pub fn neighbours(&self, x: usize, y: usize, direction: Direction) -> Directional {
         Directional {
             x: x as isize,
             y: y as isize,
             width: self.width as isize,
             height: self.height as isize,
-            iter: CARDINAL.iter(),
-        }
-    }
-
-    pub fn diagonals(&self, x: usize, y: usize) -> Directional {
-        Directional {
-            x: x as isize,
-            y: y as isize,
-            width: self.width as isize,
-            height: self.height as isize,
-            iter: DIAGONAL.iter(),
-        }
-    }
-
-    pub fn adjacent(&self, x: usize, y: usize) -> Directional {
-        Directional {
-            x: x as isize,
-            y: y as isize,
-            width: self.width as isize,
-            height: self.height as isize,
-            iter: ADJACENT.iter(),
+            iter: direction.as_iter(),
         }
     }
 
@@ -122,6 +137,44 @@ where
             width,
             height,
         }
+    }
+}
+
+impl<V> Index<(usize, usize)> for Grid<V> {
+    type Output = V;
+
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        &self.data[self.index(index.0, index.1)]
+    }
+}
+
+pub trait FromCell
+where
+    Self: Sized,
+{
+    fn from_cell(c: char) -> Option<Self>;
+}
+
+impl<V> Grid<V>
+where
+    V: FromCell,
+{
+    pub fn from_cells(s: &str) -> Option<Self> {
+        let data: Option<Vec<V>> = s
+            .lines()
+            .flat_map(|x| x.chars())
+            .map(|c| V::from_cell(c))
+            .collect();
+
+        let data = data?;
+        let height = s.lines().count();
+        let width = s.find('\n').unwrap_or_else(|| data.len() / height);
+
+        Some(Self {
+            data,
+            width,
+            height,
+        })
     }
 }
 
@@ -250,6 +303,21 @@ where
     }
 }
 
+impl<V> Display for Grid<V>
+where
+    V: Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (index, item) in self.data.iter().enumerate() {
+            item.fmt(f)?;
+            if (index + 1) % self.width == 0 {
+                f.write_char('\n')?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -275,7 +343,7 @@ mod tests {
     fn test_adjacent() {
         let grid = Grid::single_ascii_number("123\n456\n789");
 
-        let center: Vec<_> = grid.adjacent(1, 1).collect();
+        let center: Vec<_> = grid.neighbours(1, 1, Direction::Adjacent).collect();
         assert_eq!(
             center,
             vec![
@@ -290,10 +358,10 @@ mod tests {
             ]
         );
 
-        let top: Vec<_> = grid.adjacent(1, 0).collect();
+        let top: Vec<_> = grid.neighbours(1, 0, Direction::Adjacent).collect();
         assert_eq!(top, vec![(0, 0), (2, 0), (0, 1), (1, 1), (2, 1)]);
 
-        let bottom: Vec<_> = grid.adjacent(1, 2).collect();
+        let bottom: Vec<_> = grid.neighbours(1, 2, Direction::Adjacent).collect();
         assert_eq!(bottom, vec![(0, 1), (1, 1), (2, 1), (0, 2), (2, 2)]);
     }
 
@@ -328,7 +396,7 @@ mod tests {
                 if *value > 9 {
                     *value = 0;
                     seen.insert((x, y));
-                    for (x, y) in grid.adjacent(x, y) {
+                    for (x, y) in grid.neighbours(x, y, Direction::Adjacent) {
                         flash(grid, seen, x, y)
                     }
                 }
