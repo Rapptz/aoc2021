@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::BinaryHeap;
 
 use anyhow::Result;
 use aoc2021::{Direction, Grid};
@@ -30,8 +30,8 @@ fn shortest_path(grid: &Grid<u8>) -> Option<u16> {
         cost: 0,
     });
 
-    let mut dist: HashMap<_, _> = grid.items().map(|(d, _)| (d, u16::MAX)).collect();
-    dist.insert((0, 0), 0);
+    let mut dist: Vec<_> = grid.items().map(|_| u16::MAX).collect();
+    dist[0] = 0;
 
     while let Some(NodeWithCost { x, y, cost }) = queue.pop() {
         if (x, y) == (grid.width() - 1, grid.height() - 1) {
@@ -45,9 +45,10 @@ fn shortest_path(grid: &Grid<u8>) -> Option<u16> {
                 cost: cost + grid[(dx, dy)] as u16,
             };
 
-            if next.cost < *dist.get(&(dx, dy))? {
+            let idx = (dy * grid.width()) + dx;
+            if next.cost < dist[idx] {
                 queue.push(next);
-                dist.insert((dx, dy), next.cost);
+                dist[idx] = next.cost;
             }
         }
     }
