@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 anyhow = { version = "1" }
 itertools = { version = "0.10" }
+regex = { version = "1" }
