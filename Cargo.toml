@@ -9,3 +9,4 @@ edition = "2021"
 anyhow = { version = "1" }
 itertools = { version = "0.10" }
 regex = { version = "1" }
+once_cell = { version = "1.9" }
