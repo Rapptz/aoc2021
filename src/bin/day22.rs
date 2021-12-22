@@ -1,10 +1,15 @@
-use std::{collections::HashSet, ops::RangeInclusive, str::FromStr};
+use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-type Range = RangeInclusive<isize>;
+/// An inclusive range because RangeInclusive is kind of a pain
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct Range {
+    start: isize,
+    end: isize,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Bounds {
@@ -14,35 +19,38 @@ struct Bounds {
 }
 
 fn intersection(from: Range, to: Range) -> Option<Range> {
-    if to.start() > from.end() || from.start() > to.end() {
+    if to.start > from.end || from.start > to.end {
         None
     } else {
-        Some(*from.start().clamp(to.start(), to.end())..=*from.end().clamp(to.start(), to.end()))
+        Some(Range {
+            start: from.start.clamp(to.start, to.end),
+            end: from.end.clamp(to.start, to.end),
+        })
     }
 }
 
 impl Bounds {
     fn new(range: Range) -> Self {
         Self {
-            x: range.clone(),
-            y: range.clone(),
-            z: range.clone(),
+            x: range,
+            y: range,
+            z: range,
         }
     }
 
     fn intersect(&self, other: &Self) -> Option<Self> {
         Some(Self {
-            x: intersection(self.x.clone(), other.x.clone())?,
-            y: intersection(self.y.clone(), other.y.clone())?,
-            z: intersection(self.z.clone(), other.z.clone())?,
+            x: intersection(self.x, other.x)?,
+            y: intersection(self.y, other.y)?,
+            z: intersection(self.z, other.z)?,
         })
     }
 
     #[inline]
     fn volume(&self) -> isize {
-        (self.x.end() - self.x.start() + 1)
-            * (self.y.end() - self.y.start() + 1)
-            * (self.z.end() - self.z.start() + 1)
+        (self.x.end - self.x.start + 1)
+            * (self.y.end - self.y.start + 1)
+            * (self.z.end - self.z.start + 1)
     }
 }
 
@@ -90,9 +98,18 @@ impl FromStr for Step {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let captures = REGEX.captures(s).context("missing")?;
         let bounds = Bounds {
-            x: captures[2].parse()?..=captures[3].parse()?,
-            y: captures[4].parse()?..=captures[5].parse()?,
-            z: captures[6].parse()?..=captures[7].parse()?,
+            x: Range {
+                start: captures[2].parse()?,
+                end: captures[3].parse()?,
+            },
+            y: Range {
+                start: captures[4].parse()?,
+                end: captures[5].parse()?,
+            },
+            z: Range {
+                start: captures[6].parse()?,
+                end: captures[7].parse()?,
+            },
         };
         Ok(Self {
             on: captures[1].as_bytes() == b"on",
@@ -103,11 +120,16 @@ impl FromStr for Step {
 
 fn part1(input: &str) -> Result<isize> {
     let mut cuboids: Vec<Cuboid> = Vec::new();
+    let range = Range {
+        start: -50,
+        end: 50,
+    };
+
     input
         .lines()
         .filter_map(|s| s.parse::<Step>().ok())
         .for_each(|s| {
-            if let Some(bounds) = s.bounds.intersect(&Bounds::new(-50..=50)) {
+            if let Some(bounds) = s.bounds.intersect(&Bounds::new(range)) {
                 for cube in &mut cuboids {
                     cube.remove(&bounds);
                 }
