@@ -1,7 +1,7 @@
 use std::{
     fmt::{Debug, Display, Write},
     hash::Hash,
-    ops::Index,
+    ops::{Index, IndexMut},
 };
 
 /// Boilerplate for grid-related problems
@@ -145,6 +145,13 @@ impl<V> Index<(usize, usize)> for Grid<V> {
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         &self.data[self.index(index.0, index.1)]
+    }
+}
+
+impl<V> IndexMut<(usize, usize)> for Grid<V> {
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
+        let index = self.index(index.0, index.1);
+        &mut self.data[index]
     }
 }
 
